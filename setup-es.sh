@@ -15,7 +15,7 @@ sudo apt-get update && sudo apt-get install -y bc python openjdk-8-jre-headless 
 hosts=`python -c "print '['+','.join(['\"10.0.0.%d\"' % x for x in range(${HOSTIP_IDX},${HOSTIP_IDX}+${COUNT})])+']'"`
 min_master=`echo "${COUNT}/2+1" | bc`
 cat << EOF > /etc/elasticsearch/elasticsearch.yml
-network.host 10.0.0.${HOSTIP_IDX}
+network.host: 10.0.0.${HOSTIP_IDX}
 discovery.zen.ping.multicast.enabled: false
 discovery.zen.ping.unicast.hosts: ${hosts}
 discovery.zen.minimum_master_nodes: ${min_master}
