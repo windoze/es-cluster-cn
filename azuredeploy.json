@@ -47,6 +47,10 @@
     "mastersLbIPConfigName": "MastersLBFrontEnd",
     "mastersLbIPConfigID": "[concat(variables('mastersLbID'),'/frontendIPConfigurations/', variables('mastersLbIPConfigName'))]",
     "mastersLbBackendPoolName": "es-masters-pool",
+    "mastersLbBackendPoolID": "[concat(variables('mastersLbID'),'/backendAddressPools/', variables('mastersLbBackendPoolName'))]",
+    "mastersLbProbesName": "es-masters-probe",
+    "mastersLbProbesID": "[concat(variables('mastersLbID'),'/probes/', variables('mastersLbProbesName'))]",
+    "mastersLbRulesName": "es-lb-rules",
     "sshKeyPath": "[concat('/home/', parameters('adminUsername'), '/.ssh/authorized_keys')]"
   },
   "resources": [
@@ -205,6 +209,39 @@
           {
             "name": "[variables('mastersLbBackendPoolName')]"
           }
+        ],
+        "loadBalancingRules": [
+            {
+                "name": "[variables('mastersLbRulesName')]",
+                "properties": {
+                    "frontendIPConfiguration": {
+                      "id": "[variables('mastersLbIPConfigID')]"
+                    },
+                    "frontendPort": 9200,
+                    "backendPort": 9200,
+                    "enableFloatingIP": false,
+                    "idleTimeoutInMinutes": 4,
+                    "protocol": "Tcp",
+                    "loadDistribution": "Default",
+                    "backendAddressPool": {
+                      "id": "[variables('mastersLbBackendPoolID')]"
+                    },
+                    "probe": {
+                      "id": "[variables('mastersLbProbesID')]"
+                    }
+                }
+            }
+        ],
+        "probes": [
+            {
+                "name": "[variables('mastersLbProbesName')]",
+                "properties": {
+                    "protocol": "Tcp",
+                    "port": 9200,
+                    "intervalInSeconds": 5,
+                    "numberOfProbes": 2
+                }
+            }
         ]
       }
     },
@@ -237,13 +274,12 @@
       "location": "[resourceGroup().location]",
       "copy": {
         "name": "vmLoopMaster",
-        "count": "[sub(parameters('masterCount'),1)]"
+        "count": "[parameters('masterCount')]"
       },
       "dependsOn": [
         "[concat('Microsoft.Storage/storageAccounts/', variables('newStorageAccountName'))]",
         "[concat('Microsoft.Network/networkInterfaces/', variables('vmNameMaster'), copyIndex(), '-nic')]",
-        "[concat('Microsoft.Compute/availabilitySets/', variables('availabilitySetMasters'))]",
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', concat(variables('vmNameMaster'), '0'), 'config-es-master')]"
+        "[concat('Microsoft.Compute/availabilitySets/', variables('availabilitySetMasters'))]"
       ],
       "properties": {
         "availabilitySet": {
